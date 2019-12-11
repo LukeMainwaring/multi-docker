@@ -1,0 +1,25 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t lukemain/react-test -f ./client/Dockerfile.dev ./client
+  # We could run tests other than the react client, ex:
+  # - docker build myotherproject
+
+script:
+  - docker run -e CI=true lukemain/react-test npm test
+  # - docker run myotherproject tests
+
+after_success:
+  - docker build -t lukemain/multi-client ./client
+  - docker build -t lukemain/multi-nginx ./nginx
+  - docker build -t lukemain/multi-server ./server
+  - docker build -t lukemain/multi-worker ./worker
+  # Log in to Docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take these images and push them to docker hub
+  - docker push lukemain/multi-client
+  - docker push lukemain/multi-nginx
+  - docker push lukemain/multi-server
+  - docker push lukemain/multi-worker
